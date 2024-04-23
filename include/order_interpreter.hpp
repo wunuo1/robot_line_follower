@@ -29,6 +29,17 @@ public:
         if (!pFunc_PWM_servo_ || !PyCallable_Check(pFunc_PWM_servo_)) {
             PyErr_Print();
         }
+
+        pTimeModule = PyImport_ImportModule("time");
+        if (pTimeModule == nullptr) {
+            PyErr_Print();
+        }
+
+        pSleepFunc = PyObject_GetAttrString(pTimeModule, "sleep");
+        if (pSleepFunc == nullptr || !PyCallable_Check(pSleepFunc)) {
+            PyErr_Print();
+        }
+
     }
 
     ~OrderInterpreter(){
@@ -59,7 +70,12 @@ public:
             return;
         }
         PyObject_CallObject(pFunc_PWM_servo_, pArgs);
+        PyObject* pArgs_sleep = PyTuple_Pack(1, PyFloat_FromDouble(use_time / 1000.0));
+        PyObject_CallObject(pSleepFunc, pArgs_sleep);
+
         Py_DECREF(pArgs);
+        Py_DECREF(pArgs_sleep);
+
     }
 
 private:
@@ -68,6 +84,9 @@ private:
 
     PyObject* pModule_PWM_servo_;
     PyObject* pFunc_PWM_servo_;
+
+    PyObject* pTimeModule;
+    PyObject* pSleepFunc;
 };
 
 #endif  // INCLUDE_ORDER_INTERPRETER_H_
